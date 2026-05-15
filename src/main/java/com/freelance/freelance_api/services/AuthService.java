@@ -1,11 +1,13 @@
 package com.freelance.freelance_api.services;
 
+import com.freelance.freelance_api.config.JwtUtils;
 import com.freelance.freelance_api.dtos.UserLoginDto;
 import com.freelance.freelance_api.dtos.UserRegisterDto;
 import com.freelance.freelance_api.entities.Role;
 import com.freelance.freelance_api.entities.User;
 import com.freelance.freelance_api.repositories.RoleRepository;
 import com.freelance.freelance_api.repositories.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Set;
@@ -15,10 +17,14 @@ import java.util.Set;
 public class AuthService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtUtils jwtUtils;
 
-    public AuthService(UserRepository userRepository, RoleRepository roleRepository) {
+    public AuthService(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, JwtUtils jwtUtils) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtUtils = jwtUtils;
     }
 
     public User register(UserRegisterDto userRegisterDto) {
@@ -32,21 +38,21 @@ public class AuthService {
         User user = new User();
         user.setUsername(userRegisterDto.getUsername());
         user.setEmail(userRegisterDto.getEmail());
-        user.setPassword(userRegisterDto.getPassword());
+        user.setPassword(passwordEncoder.encode(userRegisterDto.getPassword()));
         Role defaultRole = roleRepository.findByName("ROLE_USER")
-                .orElseThrow(() -> new RuntimeException("Грешка: Ролята ROLE_USER не е намерена в базата!"));
+                .orElseThrow(() -> new RuntimeException("Error: role not found in database"));
         user.setRoles(Set.of(defaultRole));
 
         return userRepository.save(user);
     }
-    public User login(UserLoginDto userLoginDto) {
+    public String login(UserLoginDto userLoginDto) {
         User user = userRepository.findByUsername(userLoginDto.getUsername())
                 .orElseThrow(() -> new RuntimeException("Invalid username or password"));
 
-        if (!user.getPassword().equals(userLoginDto.getPassword())) {
-            throw new RuntimeException("Invalid username or password");
+        if (!passwordEncoder.matches(userLoginDto.getPassword(), user.getPassword())){
+            throw new RuntimeException("Invalid credentials");
         }
 
-        return user;
+        return jwtUtils.generateToken(user.getUsername());
     }
 }

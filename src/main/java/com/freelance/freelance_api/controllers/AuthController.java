@@ -1,5 +1,6 @@
 package com.freelance.freelance_api.controllers;
 
+import com.freelance.freelance_api.dtos.AuthResponse;
 import com.freelance.freelance_api.dtos.UserLoginDto;
 import com.freelance.freelance_api.dtos.UserRegisterDto;
 import com.freelance.freelance_api.entities.User;
@@ -28,11 +29,11 @@ public class AuthController {
            return ResponseEntity.badRequest().body(e.getMessage());
        }
     }
-
+    @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody UserLoginDto userLoginDto){
         try {
-            User user = authService.login(userLoginDto);
-            return ResponseEntity.ok("Welcome " + user.getUsername());
+            String token = authService.login(userLoginDto);
+            return ResponseEntity.ok(new AuthResponse(token));
         } catch (RuntimeException e) {
             return ResponseEntity.status(401).body(e.getMessage());
         }
