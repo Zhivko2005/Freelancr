@@ -41,7 +41,6 @@ public class Offer {
     @JoinColumn(name="author_id", nullable = false)
     private User author;
 
-    @NotEmpty
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "offer_categories",

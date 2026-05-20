@@ -3,6 +3,7 @@ package com.freelance.freelance_api.config;
 import com.freelance.freelance_api.services.CustomerDetailService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -34,7 +35,15 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(("/h2-console/**")).permitAll()
+
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/offers/**").permitAll()
+
+                        .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/categories/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/categories/**").hasRole("ADMIN")
+
                         .anyRequest().authenticated()
+
                 ).sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .headers(headers->headers.frameOptions(frame -> frame.sameOrigin() ))
                 .addFilterBefore(new JwtAuthenticationFilter(jwtUtils, customerDetailService ),

@@ -11,6 +11,7 @@ import com.freelance.freelance_api.repositories.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
 
@@ -22,7 +23,8 @@ public class DataInitializer {
     CommandLineRunner initDatabase(RoleRepository roleRepo,
                                    CategoryRepository catRepo,
                                    UserRepository userRepo,
-                                   OfferRepository offerRepo) {
+                                   OfferRepository offerRepo,
+                                   PasswordEncoder passwordEncoder) {
         return args -> {
             System.out.println(">> Starting database seeding...");
 
@@ -43,7 +45,7 @@ public class DataInitializer {
             if (userRepo.count() == 0) {
                 Role adminRole = roleRepo.findByName("ROLE_ADMIN").orElse(null);
 
-                User admin = new User("zhivko_dev", "zhivko@example.com", "password123");
+                User admin = new User("zhivko_dev", "zhivko@example.com", passwordEncoder.encode("password123"));
                 if (adminRole != null) {
                     admin.addRole(adminRole);
                 }
