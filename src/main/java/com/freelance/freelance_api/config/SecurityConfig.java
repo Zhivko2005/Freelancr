@@ -28,28 +28,43 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain (HttpSecurity http)
-        throws  Exception {
-        http.
-                csrf(csrf ->csrf.disable()).sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Без сесии (заради JWT)
+    public SecurityFilterChain filterChain (HttpSecurity http) throws Exception {
+        http
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/h2-console/**", "/view/**"))
+
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers(("/h2-console/**")).permitAll()
-
+                        .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/offers/**").permitAll()
-
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/categories/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/categories/**").hasRole("ADMIN")
-
                         .requestMatchers(HttpMethod.PUT, "/api/users/*/role").hasRole("ADMIN")
                         .requestMatchers("/api/users/**").authenticated()
 
-                        .anyRequest().authenticated()
+                        .requestMatchers("/view/offers").permitAll()
+                        .requestMatchers("/view/login/**").permitAll()
+                        .requestMatchers("/view/register").permitAll()
 
-                ).sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .headers(headers->headers.frameOptions(frame -> frame.sameOrigin() ))
-                .addFilterBefore(new JwtAuthenticationFilter(jwtUtils, customerDetailService ),
+                        .anyRequest().authenticated()
+                )
+                .formLogin(form -> form
+                        .loginPage("/view/login")
+                        .loginProcessingUrl("/view/login")
+                        .defaultSuccessUrl("/view/offers", true)
+                        .permitAll()
+                )
+                .logout(logout -> logout
+                        .logoutUrl("/logout")
+                        .logoutSuccessUrl("/view/offers")
+                        .invalidateHttpSession(true)
+                        .deleteCookies("JSESSIONID")
+                        .permitAll()
+                )
+                .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
+                .addFilterBefore(new JwtAuthenticationFilter(jwtUtils, customerDetailService),
                         UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

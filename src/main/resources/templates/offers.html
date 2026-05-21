@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Freelance Platform - Offers</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <div class="container">
+        <a class="navbar-brand" href="/view/offers">FreelancePlatform</a>
+
+        <div class="d-flex align-items-center">
+            <div th:if="${currentUsername == null}">
+                <a href="/view/login" class="btn btn-outline-light me-2">Вход</a>
+                <a href="#" class="btn btn-primary">Регистрация</a>
+            </div>
+
+            <div th:if="${currentUsername != null}" class="d-flex align-items-center">
+                <span class="text-white me-3">
+                    Добре дошъл, <strong class="text-info" th:text="${currentUsername}">Потребител</strong>!
+                </span>
+                <a href="/logout" class="btn btn-sm btn-danger">Изход</a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Всички налични обяви</h2>
+        <a href="#" class="btn btn-success">+ Създай обява</a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 mb-4" th:each="offer : ${offers}">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-primary" th:text="${offer.title}">Заглавие</h5>
+
+                    <h6 class="card-subtitle mb-2 text-muted">
+                        Бюджет: <span class="fw-bold text-success" th:text="${offer.price} + ' лв.'">100 лв.</span>
+                    </h6>
+
+                    <p class="card-text text-truncate" th:text="${offer.description}">Описание на проекта...</p>
+                </div>
+                <div class="card-footer bg-white border-top-0 d-flex justify-content-between align-items-center">
+                    <small class="text-muted">Автор: <span th:text="${offer.author.username}">потребител</span></small>
+                    <a th:href="@{'/view/offers/' + ${offer.id}}" class="btn btn-sm btn-outline-primary">Преглед</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="alert alert-info text-center" th:if="${#lists.isEmpty(offers)}">
+        В момента няма налични оферти. Бъди първият, който ще създаде!
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
