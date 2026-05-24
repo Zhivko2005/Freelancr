@@ -15,7 +15,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
 
-
 @Configuration
 public class DataInitializer {
 
@@ -35,13 +34,6 @@ public class DataInitializer {
                 System.out.println(">> Roles seeded.");
             }
 
-            if (catRepo.count() == 0) {
-                catRepo.save(new Category("Programming"));
-                catRepo.save(new Category("Graphic Design"));
-                catRepo.save(new Category("Copywriting"));
-                System.out.println(">> Categories seeded.");
-            }
-
             if (userRepo.count() == 0) {
                 Role adminRole = roleRepo.findByName("ROLE_ADMIN").orElse(null);
 
@@ -51,6 +43,15 @@ public class DataInitializer {
                 }
                 userRepo.save(admin);
                 System.out.println(">> Test user seeded.");
+            }
+
+            User adminUser = userRepo.findByUsername("zhivko_dev").orElse(null);
+
+            if (catRepo.count() == 0 && adminUser != null) {
+                catRepo.save(new Category("Programming", "Software development tasks and IT services", adminUser));
+                catRepo.save(new Category("Graphic Design", "Logo design, branding, and UI/UX solutions", adminUser));
+                catRepo.save(new Category("Copywriting", "Content creation, translation, and text editing", adminUser));
+                System.out.println(">> Categories seeded.");
             }
 
             if (offerRepo.count() == 0) {

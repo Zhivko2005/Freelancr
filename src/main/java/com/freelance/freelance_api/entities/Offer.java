@@ -37,11 +37,11 @@ public class Offer {
     @Column(nullable = false)
     private BigDecimal price;
 
-    @ManyToOne(fetch=FetchType.LAZY)
+    @ManyToOne(fetch=FetchType.EAGER)
     @JoinColumn(name="author_id", nullable = false)
     private User author;
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "offer_categories",
             joinColumns = @JoinColumn(name = "offer_id"),
@@ -77,5 +77,12 @@ public class Offer {
     @PreUpdate
     private void onUpdate(){
         this.updatedAt= LocalDateTime.now();
+    }
+
+    public void addCategory(Category category) {
+        if (this.categories == null) {
+            this.categories = new HashSet<>();
+        }
+        this.categories.add(category);
     }
 }

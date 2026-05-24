@@ -1,6 +1,5 @@
 package com.freelance.freelance_api.controllers;
 
-import com.freelance.freelance_api.dtos.AuthResponse;
 import com.freelance.freelance_api.dtos.RoleChangeDto;
 import com.freelance.freelance_api.dtos.UserUpdateDto;
 import com.freelance.freelance_api.entities.User;
@@ -9,6 +8,8 @@ import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/api/users")
@@ -19,25 +20,40 @@ public class UserController {
         this.userService = userService;
     }
 
+    @GetMapping("/{username}")
+    public CompletableFuture<ResponseEntity<User>> getUserProfile(@PathVariable String username) {
+        return userService.getUserByUsername(username)
+                .thenApply(ResponseEntity::ok);
+    }
+
     @PutMapping("/{username}")
-    public ResponseEntity<User> updateUser(@PathVariable String username,
-                                           @Valid @RequestBody UserUpdateDto dto,
-                                           Authentication authentication) {
-        User updated = userService.updateUser(username, dto, authentication.getName());
-        return ResponseEntity.ok(updated);
+    public CompletableFuture<ResponseEntity<User>> updateUser(@PathVariable String username,
+                                                              @Valid @RequestBody UserUpdateDto dto,
+                                                              Authentication authentication) {
+        return userService.updateUser(username, dto, authentication.getName())
+                .thenApply(ResponseEntity::ok);
     }
 
     @DeleteMapping("/{username}")
-    public ResponseEntity<String> deleteUser(@PathVariable String username, Authentication authentication) {
+    public CompletableFuture<ResponseEntity<String>> deleteUser(@PathVariable String username, Authentication authentication) {
         boolean isAdmin = authentication.getAuthorities().stream()
                 .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ROLE_ADMIN"));
-        userService.deleteUser(username, authentication.getName(), isAdmin);
-        return ResponseEntity.ok("User profile deleted successfully");
+
+        return userService.deleteUser(username, authentication.getName(), isAdmin)
+                .thenApply(unused -> ResponseEntity.ok("User profile deleted successfully"));
     }
+
     @PutMapping("/{username}/role")
-    public ResponseEntity<User> changeUserRole(@PathVariable String username,
-                                               @Valid @RequestBody RoleChangeDto dto) {
-        User updatedUser = userService.changeUserRole(username, dto);
-        return ResponseEntity.ok(updatedUser);
+    public CompletableFuture<ResponseEntity<User>> changeUserRole(@PathVariable String username,
+                                                                  @Valid @RequestBody RoleChangeDto dto) {
+        return userService.changeUserRole(username, dto)
+                .thenApply(ResponseEntity::ok);
+    }
+
+    @PutMapping("/{username}/status")
+    public CompletableFuture<ResponseEntity<User>> toggleUserStatus(@PathVariable String username,
+                                                                    @RequestParam boolean active) {
+        return userService.toggleUserActivity(username, active)
+                .thenApply(ResponseEntity::ok);
     }
 }

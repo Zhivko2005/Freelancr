@@ -7,11 +7,13 @@ import com.freelance.freelance_api.entities.Role;
 import com.freelance.freelance_api.entities.User;
 import com.freelance.freelance_api.repositories.RoleRepository;
 import com.freelance.freelance_api.repositories.UserRepository;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import jakarta.transaction.Transactional;
 
-import java.util.Set;
-
+import java.util.HashSet;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class AuthService {
@@ -27,32 +29,46 @@ public class AuthService {
         this.jwtUtils = jwtUtils;
     }
 
-    public User register(UserRegisterDto userRegisterDto) {
+    @Async
+    @Transactional
+    public CompletableFuture<User> register(UserRegisterDto userRegisterDto) {
         if (userRepository.findByUsername(userRegisterDto.getUsername()).isPresent()) {
             throw new RuntimeException("Username already exists");
-        }else if (userRepository.findByEmail(userRegisterDto.getEmail()).isPresent()) {
+        } else if (userRepository.findByEmail(userRegisterDto.getEmail()).isPresent()) {
             throw new RuntimeException("Email already exists");
         } else if (!userRegisterDto.getPassword().equals(userRegisterDto.getConfirmPassword())) {
             throw new RuntimeException("Passwords do not match");
         }
+
         User user = new User();
         user.setUsername(userRegisterDto.getUsername());
         user.setEmail(userRegisterDto.getEmail());
         user.setPassword(passwordEncoder.encode(userRegisterDto.getPassword()));
+
         Role defaultRole = roleRepository.findByName("ROLE_USER")
                 .orElseThrow(() -> new RuntimeException("Error: role not found in database"));
-        user.setRoles(Set.of(defaultRole));
 
-        return userRepository.save(user);
+
+        user.setRoles(new HashSet<>());
+        user.addRole(defaultRole);
+
+        return CompletableFuture.completedFuture(userRepository.save(user));
     }
-    public String login(UserLoginDto userLoginDto) {
+
+    @Async
+    public CompletableFuture<String> login(UserLoginDto userLoginDto) {
         User user = userRepository.findByUsername(userLoginDto.getUsername())
                 .orElseThrow(() -> new RuntimeException("Invalid username or password"));
+
+        if (user.getIsActive() != null && !user.getIsActive()) {
+            throw new RuntimeException("This account has been deactivated by an admin.");
+        }
 
         if (!passwordEncoder.matches(userLoginDto.getPassword(), user.getPassword())){
             throw new RuntimeException("Invalid credentials");
         }
 
-        return jwtUtils.generateToken(user.getUsername());
+        String token = jwtUtils.generateToken(user.getUsername());
+        return CompletableFuture.completedFuture(token);
     }
 }

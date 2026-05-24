@@ -4,12 +4,14 @@ import com.freelance.freelance_api.dtos.OfferRequestDto;
 import com.freelance.freelance_api.entities.Offer;
 import com.freelance.freelance_api.services.OfferService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.security.Principal;
-import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/api/offers")
@@ -20,14 +22,23 @@ public class OfferController {
     public OfferController(OfferService offerService) {
         this.offerService = offerService;
     }
+
     @PostMapping
-    public ResponseEntity<Offer> createOffer(@Valid @RequestBody OfferRequestDto dto, Principal principal){
-        Offer createdOffer = offerService.createOffer(dto,principal.getName());
-        return new ResponseEntity<>(createdOffer, HttpStatus.CREATED);
+    public CompletableFuture<ResponseEntity<Offer>> createOffer(@Valid @RequestBody OfferRequestDto dto, Principal principal){
+        return offerService.createOffer(dto, principal.getName())
+                .thenApply(createdOffer -> new ResponseEntity<>(createdOffer, HttpStatus.CREATED));
     }
+
     @GetMapping
-    public ResponseEntity<List<Offer>>getAllOffers(){
-        return ResponseEntity.ok(offerService.getAllOffers());
+    public CompletableFuture<ResponseEntity<Page<Offer>>> getAllOffers(
+            @RequestParam(defaultValue = "") String title,
+            @RequestParam(defaultValue = "99999999") BigDecimal maxPrice,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy) {
+
+        return offerService.getAllOffers(title, maxPrice, page, size, sortBy)
+                .thenApply(ResponseEntity::ok);
     }
 
     @GetMapping("/{id}")
@@ -36,14 +47,14 @@ public class OfferController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Offer> updateOffer(@PathVariable Long id, @Valid @RequestBody OfferRequestDto dto, Principal principal) {
-        Offer updatedOffer = offerService.updateOffer(id, dto, principal.getName());
-        return ResponseEntity.ok(updatedOffer);
+    public CompletableFuture<ResponseEntity<Offer>> updateOffer(@PathVariable Long id, @Valid @RequestBody OfferRequestDto dto, Principal principal) {
+        return offerService.updateOffer(id, dto, principal.getName())
+                .thenApply(ResponseEntity::ok);
     }
 
-    @DeleteMapping
-    public ResponseEntity<String> deleteOffer(@PathVariable Long id, Principal principal){
-        offerService.deleteOffer(id, principal.getName());
-        return ResponseEntity.ok("Offer deleted successfully");
+    @DeleteMapping("/{id}")
+    public CompletableFuture<ResponseEntity<String>> deleteOffer(@PathVariable Long id, Principal principal){
+        return offerService.deleteOffer(id, principal.getName())
+                .thenApply(unused -> ResponseEntity.ok("Offer deleted successfully"));
     }
 }
